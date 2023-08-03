@@ -1,9 +1,12 @@
+import { UserType } from '@prisma/client';
 import {
   IsString,
   IsNotEmpty,
   IsEmail,
   MinLength,
   Matches,
+  IsEnum,
+  IsOptional,
 } from 'class-validator';
 
 export class SignUpDto {
@@ -22,11 +25,23 @@ export class SignUpDto {
   @IsString()
   @MinLength(5)
   password: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  productKey?: string;
 }
 
 export class SignInDto {
   @IsString()
   password: string;
+
+  @IsEmail()
+  email: string;
+}
+export class GenerateProductKetDto {
+  @IsEnum(UserType)
+  userType: UserType;
 
   @IsEmail()
   email: string;

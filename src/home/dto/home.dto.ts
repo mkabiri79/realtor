@@ -141,3 +141,9 @@ export class UpdateHomeDto {
   @IsNumber()
   price?: number;
 }
+
+export class InquireDto {
+  @IsString()
+  @IsNotEmpty()
+  message: string;
+}

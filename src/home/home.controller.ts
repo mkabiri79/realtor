@@ -8,10 +8,18 @@ import {
   ParseIntPipe,
   Param,
   Body,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { HomeService } from './home.service';
-import { CreateHomeDto, HomeResponseDto, UpdateHomeDto } from './dto/home.dto';
-import { propertyType } from '@prisma/client';
+import {
+  CreateHomeDto,
+  HomeResponseDto,
+  InquireDto,
+  UpdateHomeDto,
+} from './dto/home.dto';
+import { UserType, propertyType } from '@prisma/client';
+import { User, UserClaim } from 'src/user/decorator/user.decorator';
+import { Roles } from 'src/decorators/role.decorator';
 
 @Controller('home')
 export class HomeController {
@@ -43,21 +51,43 @@ export class HomeController {
   getHome(@Param('id', ParseIntPipe) id: number) {
     return this.homeService.getHomeById(id);
   }
-
+  @Roles(UserType.REALTOR)
   @Post()
-  ceateHome(@Body() body: CreateHomeDto) {
-    return this.homeService.createHome(body);
+  ceateHome(@Body() body: CreateHomeDto, @User() user: UserClaim) {
+    return this.homeService.createHome(body, user.id);
   }
-
+  @Roles(UserType.REALTOR)
   @Put(':id')
-  updateHome(
+  async updateHome(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateHomeDto,
+    @User() user: UserClaim,
   ) {
+    const realtor = await this.homeService.getRealtorByHomeId(id);
+    if (realtor.id !== user.id) {
+      throw new UnauthorizedException();
+    }
     return this.homeService.updateHome(id, body);
   }
+  @Roles(UserType.REALTOR)
   @Delete(':id')
-  deletaHome(@Param('id', ParseIntPipe) id: number) {
+  async deletaHome(
+    @Param('id', ParseIntPipe) id: number,
+    @User() user: UserClaim,
+  ) {
+    const realtor = await this.homeService.getRealtorByHomeId(id);
+    if (realtor.id !== user.id) {
+      throw new UnauthorizedException();
+    }
     return this.homeService.deleteHomeById(id);
+  }
+  @Roles(UserType.BUYER)
+  @Post('/inquirre/:id')
+  inquire(
+    @Param('id', ParseIntPipe) homeId: number,
+    @User() user: UserClaim,
+    @Body() { message }: InquireDto,
+  ) {
+    this.homeService.inquire(user, homeId, message);
   }
 }
